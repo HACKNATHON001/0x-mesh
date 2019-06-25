@@ -77,18 +77,23 @@ type OrderEvent struct {
 	SignedOrder              *SignedOrder   `json:"signedOrder"`
 	Kind                     OrderEventKind `json:"kind"`
 	FillableTakerAssetAmount *big.Int       `json:"fillableTakerAssetAmount"`
-	// The hash of the Ethereum transaction that caused the order status to change
-	TxHash common.Hash `json:"txHash"`
+	// The hashes of the Ethereum transactions that caused the order status to change.
+	// Could be because of multiple transactions, not just a single transaction.
+	TxHashes []common.Hash `json:"txHashes"`
 }
 
 // MarshalJSON implements a custom JSON marshaller for the SignedOrder type
 func (o *OrderEvent) MarshalJSON() ([]byte, error) {
+	stringifiedTxHashes := []string{}
+	for _, txHash := range o.TxHashes {
+		stringifiedTxHashes = append(stringifiedTxHashes, txHash.Hex())
+	}
 	return json.Marshal(map[string]interface{}{
 		"orderHash":                o.OrderHash.Hex(),
 		"signedOrder":              o.SignedOrder,
 		"kind":                     o.Kind,
 		"fillableTakerAssetAmount": o.FillableTakerAssetAmount.String(),
-		"txHash":                   o.TxHash.Hex(),
+		"txHashes":                 stringifiedTxHashes,
 	})
 }
 
