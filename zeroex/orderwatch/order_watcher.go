@@ -408,8 +408,8 @@ func (w *Watcher) setupEventWatcher() {
 								continue
 							}
 							orders = []*meshdb.Order{}
-							order, ok := w.findOrderAndGenerateOrderEvents(exchangeFillEvent.OrderHash)
-							if ok {
+							order := w.findOrderAndGenerateOrderEvents(exchangeFillEvent.OrderHash)
+							if order != nil {
 								orders = append(orders, order)
 							}
 
@@ -421,8 +421,8 @@ func (w *Watcher) setupEventWatcher() {
 								continue
 							}
 							orders = []*meshdb.Order{}
-							order, ok := w.findOrderAndGenerateOrderEvents(exchangeCancelEvent.OrderHash)
-							if ok {
+							order := w.findOrderAndGenerateOrderEvents(exchangeCancelEvent.OrderHash)
+							if order != nil {
 								orders = append(orders, order)
 							}
 
@@ -466,21 +466,21 @@ func (w *Watcher) setupEventWatcher() {
 	}()
 }
 
-func (w *Watcher) findOrderAndGenerateOrderEvents(orderHash common.Hash) (*meshdb.Order, bool) {
+func (w *Watcher) findOrderAndGenerateOrderEvents(orderHash common.Hash) (*meshdb.Order) {
 	order := meshdb.Order{}
 	err := w.meshDB.Orders.FindByID(orderHash.Bytes(), &order)
 	if err != nil {
 		if _, ok := err.(db.NotFoundError); ok {
 			// short-circuit. We expect to receive events from orders we aren't actively tracking
-			return nil, false
+			return nil
 		}
 		logger.WithFields(logger.Fields{
 			"error":     err.Error(),
 			"orderHash": orderHash,
 		}).Warning("Unexpected error using FindByID for order")
-		return nil, false
+		return nil
 	}
-	return &order, true
+	return &order
 }
 
 func (w *Watcher) findOrdersAndGenerateOrderEvents(makerAddress, tokenAddress common.Address, tokenID *big.Int) []*meshdb.Order {
